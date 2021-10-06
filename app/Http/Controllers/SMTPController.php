@@ -125,7 +125,7 @@ class SMTPController extends Controller
         
         $path = base_path('.env');
 
-        Log::info($from ." => ". $to);
+        //Log::info($from ." => ". $to);
         if (file_exists($path)) {
             file_put_contents($path, str_replace(
                 $from, $to, file_get_contents($path)
