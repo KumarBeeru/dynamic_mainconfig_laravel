@@ -78,7 +78,7 @@ class SMTPController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store smtp configuration.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -98,6 +98,8 @@ class SMTPController extends Controller
     }
 
     /**
+     * update env
+     *
      * @param $key
      * @param $value
      */
@@ -105,9 +107,6 @@ class SMTPController extends Controller
 
         $from = $key.'='. env($key, "");
         $to = $key.'='.trim($value);
-
-        Log::info($from);
-        Log::info($to);
 
         $path = base_path('.env');
 
