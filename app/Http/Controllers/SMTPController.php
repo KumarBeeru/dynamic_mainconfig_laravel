@@ -7,6 +7,7 @@ use App\Http\Requests\SmtpConfigRequest;
 use App\Models\Smtp;
 use App\Notifications\SendMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -22,7 +23,7 @@ class SMTPController extends Controller
     {
 
         $keys =  array(
-            "site_name" => "MAIL_SITE_NAME",
+            "site_name" => "APP_NAME",
             "smtp_driver" => "MAIL_DRIVER",
             "smtp_host" => "MAIL_HOST",
             "smtp_port" => "MAIL_PORT",
@@ -36,14 +37,32 @@ class SMTPController extends Controller
             ->select("site_name", "smtp_driver", "smtp_host", "smtp_port", "username", "password", "from_name", "encription", "from_mail")
             ->first()->toArray();
 
+
         foreach ($config as $key => $value){
 
+
             $env_key = $keys[$key];
-            if(env($env_key) !=  $value)
-                $value = $env_key == "MAIL_FROM_NAME" ? "\"".$value."\"" : $value ;
-                $this->configEnv($env_key, $value);
+            $from = $env_key.'=';
+            $to = $env_key.'=';
+
+            if($env_key == "MAIL_FROM_NAME"){
+
+                $to = $to. "\"".$value."\"";
+                $from = $from.(env($env_key) ? "\"".env($env_key)."\"" : env($env_key));
+
+            }else{
+
+                $to = $to.trim($value);
+                $from = $from.env($env_key);
+            }
+
+            if($to != $from){
+
+                $this->configEnv($to, $from);
+            }
         }
 
+        Artisan::call("config:clear");
         return view("send");
     }
 
@@ -52,7 +71,6 @@ class SMTPController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function send(SendMailRequest $request){
-
 
         try{
 
@@ -97,19 +115,17 @@ class SMTPController extends Controller
         }
     }
 
+
     /**
-     * update env
-     *
-     * @param $key
-     * @param $value
+     * @param $to
+     * @param $from
      */
-    protected function configEnv($key, $value){
+    protected function configEnv($to, $from){
 
-        $from = $key.'='. env($key, "");
-        $to = $key.'='.trim($value);
-
+        
         $path = base_path('.env');
 
+        Log::info($from ." => ". $to);
         if (file_exists($path)) {
             file_put_contents($path, str_replace(
                 $from, $to, file_get_contents($path)
